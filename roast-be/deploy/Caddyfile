@@ -1,0 +1,12 @@
+# Caddy auto-provisions and renews a free Let's Encrypt certificate for
+# whatever hostname SITE_ADDRESS resolves to — no manual certbot/cert
+# handling. Requires SITE_ADDRESS to be a real hostname (not a bare IP;
+# Caddy won't request a cert for one) — see docs/DEPLOY_EC2.md for using
+# a free sslip.io hostname if you don't own a domain.
+#
+# reverse_proxy sets X-Forwarded-Proto/-For/-Host on every request by
+# default, which is exactly what config/settings/prod.py's
+# SECURE_PROXY_SSL_HEADER expects from its upstream proxy.
+{$SITE_ADDRESS} {
+	reverse_proxy web:8000
+}

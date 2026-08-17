@@ -1,0 +1,36 @@
+# Secrets — the Dockerfile does `COPY . /app`; without this, a build from
+# this directory bakes .env (SECRET_KEY, DB password, API keys) directly
+# into an image layer, independent of docker-compose.yml separately (and
+# correctly) injecting env vars at runtime.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+*.egg-info
+
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+
+media
+staticfiles
+*.sqlite3
+*.log
+
+.DS_Store
+.idea
+.vscode
+
+docker-compose*.yml
+Dockerfile
+.dockerignore

@@ -1,0 +1,80 @@
+# Tuning for a free-tier EC2 instance (t2.micro/t3.micro-class: 1 vCPU,
+# ~1GB RAM) layered on top of docker-compose.prod.yml. Two things this
+# adds that the base file doesn't have:
+#
+# 1. Caddy as the TLS-terminating reverse proxy in front of `web` — gets
+#    and auto-renews a free Let's Encrypt certificate for SITE_ADDRESS
+#    with no manual cert handling. See deploy/Caddyfile and
+#    docs/DEPLOY_EC2.md for why a domain (even a free sslip.io one) is
+#    required here: a Vercel-hosted frontend is always HTTPS, and
+#    browsers block an HTTPS page from calling a plain-HTTP API
+#    ("mixed content") — there's no way around that client-side.
+#
+# 2. mem_limit + trimmed worker/concurrency counts per service, so no
+#    single container can exhaust the box's ~1GB and take everything
+#    else down with it. These are starting points, not researched
+#    numbers — watch `docker stats` after a real deploy and adjust.
+#    memswap_limit gives each container room to spill into the swap
+#    file scripts/ec2-bootstrap.sh sets up, rather than being hard
+#    OOM-killed the instant it touches its mem_limit.
+#
+# Usage (run from /opt/roast-be, with a real .env already in place —
+# NOT .env.prod: docker-compose.prod.yml's services hardcode
+# `env_file: - .env`, a literal path --env-file doesn't redirect, so the
+# real runtime file must actually be named .env):
+#   docker compose -f docker-compose.prod.yml -f docker-compose.ec2.yml up -d --build
+#
+# Security note: `web`'s port is still published to the EC2 host (via
+# docker-compose.prod.yml's ports: mapping) for convenience (e.g. an SSH
+# tunnel for debugging) — what actually keeps it off the public internet
+# is the EC2 security group. Only open 22 (SSH, ideally restricted to
+# your IP), 80, and 443 there. Never open 8000.
+
+services:
+  db:
+    command: postgres -c shared_buffers=64MB -c max_connections=20 -c work_mem=4MB
+    mem_limit: 200m
+    memswap_limit: 350m
+
+  redis:
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    mem_limit: 80m
+    memswap_limit: 150m
+
+  web:
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+      --workers 2 --timeout 60
+      --max-requests 500 --max-requests-jitter 50
+      --access-logfile - --error-logfile -
+    mem_limit: 300m
+    memswap_limit: 500m
+
+  worker:
+    command: celery -A config worker -l info --concurrency=1
+    mem_limit: 250m
+    memswap_limit: 400m
+
+  beat:
+    mem_limit: 100m
+    memswap_limit: 150m
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS must be set in .env — see docs/DEPLOY_EC2.md}
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+    restart: unless-stopped
+    mem_limit: 60m
+    memswap_limit: 100m
+
+volumes:
+  caddy_data:
+  caddy_config:

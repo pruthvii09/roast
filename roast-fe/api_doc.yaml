@@ -1,0 +1,1473 @@
+openapi: 3.0.3
+info:
+  title: Roast Anything API
+  version: 1.0.0
+  description: Backend API for the Roast Anything AI roasting platform.
+paths:
+  /api/v1/auth/change-password/:
+    post:
+      operationId: auth_change_password_create
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh:
+                  type: string
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      description: |-
+        GET    /api/v1/auth/me/ — the caller's own profile.
+        PATCH  /api/v1/auth/me/ — update display_name/avatar_url.
+        DELETE /api/v1/auth/me/ — permanently delete the caller's account and
+               everything it owns (see apps.accounts.services.delete_user_account).
+               Requires the current password in the body, same re-auth
+               pattern as ChangePasswordView — irreversible, so a leaked
+               access token alone isn't enough to trigger it.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+    patch:
+      operationId: auth_me_partial_update
+      description: |-
+        GET    /api/v1/auth/me/ — the caller's own profile.
+        PATCH  /api/v1/auth/me/ — update display_name/avatar_url.
+        DELETE /api/v1/auth/me/ — permanently delete the caller's account and
+               everything it owns (see apps.accounts.services.delete_user_account).
+               Requires the current password in the body, same re-auth
+               pattern as ChangePasswordView — irreversible, so a leaked
+               access token alone isn't enough to trigger it.
+      tags:
+      - auth
+      requestBody:
+        content:
+          DELETE:
+            schema:
+              $ref: '#/components/schemas/PatchedAccountDeleteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+    delete:
+      operationId: auth_me_destroy
+      description: |-
+        GET    /api/v1/auth/me/ — the caller's own profile.
+        PATCH  /api/v1/auth/me/ — update display_name/avatar_url.
+        DELETE /api/v1/auth/me/ — permanently delete the caller's account and
+               everything it owns (see apps.accounts.services.delete_user_account).
+               Requires the current password in the body, same re-auth
+               pattern as ChangePasswordView — irreversible, so a leaked
+               access token alone isn't enough to trigger it.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: |-
+        Basic liveness: the process is up and able to handle a request at
+        all. Deliberately does not touch the database/Redis — a slow or
+        down dependency should surface via the readiness check, not make
+        the process look dead to an orchestrator's liveness probe.
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+          description: ''
+  /api/v1/health/ready/:
+    get:
+      operationId: health_ready_retrieve
+      description: |-
+        Readiness: the process is up AND its runtime dependencies (database,
+        Redis, and at least one live Celery worker) are reachable. Returns
+        503 if any dependency is down, so an orchestrator can hold traffic
+        without restarting the pod. `celery` checking worker liveness
+        (not just broker reachability, which `redis` already covers) matters
+        because apps.roasts/apps.extraction depend on a worker actually
+        consuming tasks, not just a reachable queue.
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: boolean
+                      redis:
+                        type: boolean
+                      celery:
+                        type: boolean
+          description: ''
+  /api/v1/roasts/{id}/:
+    get:
+      operationId: roasts_retrieve
+      description: |-
+        GET    /api/v1/roasts/{id}/ — full detail, including sections/findings.
+        DELETE /api/v1/roasts/{id}/ — hard-deletes the run (cascades to its
+               sections/findings).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - roasts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoastRun'
+          description: ''
+    delete:
+      operationId: roasts_destroy
+      description: |-
+        GET    /api/v1/roasts/{id}/ — full detail, including sections/findings.
+        DELETE /api/v1/roasts/{id}/ — hard-deletes the run (cascades to its
+               sections/findings).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - roasts
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/roasts/{id}/status/:
+    get:
+      operationId: roasts_status_retrieve
+      description: |-
+        GET /api/v1/roasts/{id}/status/ — lightweight polling endpoint: just
+        status/timestamps/error, no nested sections/findings. Intended for
+        clients polling frequently while a run is queued/processing.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - roasts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoastRunStatus'
+          description: ''
+  /api/v1/roasts/quota/:
+    get:
+      operationId: roasts_quota_retrieve
+      description: |-
+        GET /api/v1/roasts/quota/ — the authenticated user's current weekly
+        roast quota: limit/used/remaining/resets_at. Read-only, cheap (no
+        row locking — see apps.roasts.services.get_roast_quota_status), safe
+        to poll before deciding whether to show a "create roast" button as
+        disabled.
+      tags:
+      - roasts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoastQuota'
+          description: ''
+  /api/v1/submissions/:
+    get:
+      operationId: submissions_list
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - deleted
+          - draft
+          - failed
+          - processing
+          - ready
+        description: |-
+          * `draft` - Draft
+          * `processing` - Processing
+          * `ready` - Ready
+          * `failed` - Failed
+          * `deleted` - Deleted
+      - in: query
+        name: submission_type
+        schema:
+          type: string
+          enum:
+          - github
+          - resume
+          - website
+        description: |-
+          * `resume` - Resume
+          * `website` - Website
+          * `github` - GitHub Profile
+      - in: query
+        name: visibility
+        schema:
+          type: string
+          enum:
+          - link
+          - private
+          - public
+        description: |-
+          * `private` - Private
+          * `link` - Link
+          * `public` - Public
+      tags:
+      - submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubmissionListList'
+          description: ''
+    post:
+      operationId: submissions_create
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      tags:
+      - submissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+  /api/v1/submissions/{id}/:
+    get:
+      operationId: submissions_retrieve
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this submission.
+        required: true
+      tags:
+      - submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+    patch:
+      operationId: submissions_partial_update
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this submission.
+        required: true
+      tags:
+      - submissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSubmissionUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSubmissionUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSubmissionUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+    delete:
+      operationId: submissions_destroy
+      description: |-
+        Wraps every successful JSON response in the project's standard envelope:
+            {"success": true, "data": <payload>, "meta": {...}}
+        Paginated responses already produce this shape themselves (see
+        StandardResultsSetPagination) and are left untouched. Non-JSON
+        responses (e.g. streaming file downloads) are also left untouched
+        since the envelope only applies to JSON API responses.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this submission.
+        required: true
+      tags:
+      - submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/submissions/{submission_id}/assets/{asset_id}/download/:
+    get:
+      operationId: submissions_assets_download_retrieve
+      parameters:
+      - in: path
+        name: asset_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/submissions/{submission_id}/roasts/:
+    get:
+      operationId: submissions_roasts_list
+      description: |-
+        GET  /api/v1/submissions/{submission_id}/roasts/  — list this
+             submission's roast runs (owner-scoped).
+        POST /api/v1/submissions/{submission_id}/roasts/  — create a queued
+             RoastRun and dispatch asynchronous processing. Never calls an
+             AI provider directly — that only happens inside the Celery
+             task (apps.roasts.tasks.process_roast_run).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - roasts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoastRunListList'
+          description: ''
+    post:
+      operationId: submissions_roasts_create
+      description: |-
+        GET  /api/v1/submissions/{submission_id}/roasts/  — list this
+             submission's roast runs (owner-scoped).
+        POST /api/v1/submissions/{submission_id}/roasts/  — create a queued
+             RoastRun and dispatch asynchronous processing. Never calls an
+             AI provider directly — that only happens inside the Celery
+             task (apps.roasts.tasks.process_roast_run).
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - roasts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoastRunCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoastRunCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoastRunCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoastRun'
+          description: ''
+  /api/v1/submissions/{submission_id}/status/:
+    get:
+      operationId: submissions_status_retrieve
+      description: |-
+        GET /api/v1/submissions/{id}/status/ — lightweight polling endpoint:
+        just status/error/timestamps, no extracted_text/metadata. Intended
+        for clients polling frequently while a resume's extraction runs in
+        the background — mirrors apps.roasts.views.RoastRunStatusView.
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionStatus'
+          description: ''
+components:
+  schemas:
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - new_password
+      - old_password
+    ExtractionStatusEnum:
+      enum:
+      - queued
+      - processing
+      - completed
+      - failed
+      type: string
+      description: |-
+        * `queued` - Queued
+        * `processing` - Processing
+        * `completed` - Completed
+        * `failed` - Failed
+    IntensityEnum:
+      enum:
+      - gentle
+      - sarcastic
+      - brutal
+      - nuclear
+      type: string
+      description: |-
+        * `gentle` - Gentle
+        * `sarcastic` - Sarcastic
+        * `brutal` - Brutal
+        * `nuclear` - Nuclear
+    LanguageEnum:
+      enum:
+      - en
+      - hi
+      - hinglish
+      type: string
+      description: |-
+        * `en` - English
+        * `hi` - Hindi
+        * `hinglish` - Hinglish
+    PaginatedRoastRunListList:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoastRunList'
+        meta:
+          type: object
+          properties:
+            count:
+              type: integer
+              example: 42
+            next:
+              type: string
+              nullable: true
+              format: uri
+            previous:
+              type: string
+              nullable: true
+              format: uri
+            page_size:
+              type: integer
+              example: 20
+    PaginatedSubmissionListList:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionList'
+        meta:
+          type: object
+          properties:
+            count:
+              type: integer
+              example: 42
+            next:
+              type: string
+              nullable: true
+              format: uri
+            previous:
+              type: string
+              nullable: true
+              format: uri
+            page_size:
+              type: integer
+              example: 20
+    PatchedAccountDeleteRequest:
+      type: object
+      description: |-
+        Requires the current password — defense against a leaked/stolen
+        access token being used to instantly, irreversibly destroy an
+        account (mirrors ChangePasswordSerializer's re-auth pattern).
+      properties:
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+    PatchedSubmissionUpdateRequest:
+      type: object
+      description: |-
+        Partial-update-only surface: `title` and `visibility` are the only
+        user-mutable fields post-creation. `submission_type`/`source_url` are
+        immutable (they underpin the CHECK constraint and any assets already
+        tied to the original type); `status` is system-managed by the future
+        processing pipeline, not user-settable via PATCH.
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        display_name:
+          type: string
+          maxLength: 150
+      required:
+      - email
+      - password
+    RoastFinding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        roast_text:
+          type: string
+          readOnly: true
+        actual_feedback:
+          type: string
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        metadata:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - actual_feedback
+      - category
+      - created_at
+      - id
+      - metadata
+      - position
+      - roast_text
+      - severity
+      - title
+    RoastQuota:
+      type: object
+      description: |-
+        Not model-backed — apps.roasts.services.get_roast_quota_status()
+        computes this from RoastRun rows in the current window. Lets a
+        client show "2 of 3 roasts left this week" ahead of hitting a 429.
+      properties:
+        limit:
+          type: integer
+        used:
+          type: integer
+        remaining:
+          type: integer
+        resets_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - limit
+      - remaining
+      - resets_at
+      - used
+    RoastRun:
+      type: object
+      description: Full detail representation — includes nested sections/findings.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        submission:
+          type: string
+          format: uuid
+          readOnly: true
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          readOnly: true
+        intensity:
+          allOf:
+          - $ref: '#/components/schemas/IntensityEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ExtractionStatusEnum'
+          readOnly: true
+        engine_version:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        error_message:
+          type: string
+          readOnly: true
+        summary:
+          type: string
+          readOnly: true
+        final_verdict:
+          type: string
+          readOnly: true
+        score:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoastSection'
+          readOnly: true
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoastFinding'
+          readOnly: true
+      required:
+      - completed_at
+      - created_at
+      - engine_version
+      - error_message
+      - final_verdict
+      - findings
+      - id
+      - intensity
+      - language
+      - score
+      - sections
+      - started_at
+      - status
+      - submission
+      - summary
+      - updated_at
+    RoastRunCreateRequest:
+      type: object
+      description: |-
+        Only language/intensity come from the request body — the submission
+        comes from the URL (/submissions/{submission_id}/roasts/) and is
+        resolved (with ownership/status validation) by the view before this
+        serializer is ever used. ChoiceField enforces "supported
+        language"/"supported intensity" directly.
+      properties:
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        intensity:
+          $ref: '#/components/schemas/IntensityEnum'
+      required:
+      - intensity
+      - language
+    RoastRunList:
+      type: object
+      description: Lighter representation for listing a submission's roast runs.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        submission:
+          type: string
+          format: uuid
+          readOnly: true
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          readOnly: true
+        intensity:
+          allOf:
+          - $ref: '#/components/schemas/IntensityEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ExtractionStatusEnum'
+          readOnly: true
+        engine_version:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        error_message:
+          type: string
+          readOnly: true
+        summary:
+          type: string
+          readOnly: true
+        score:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - completed_at
+      - created_at
+      - engine_version
+      - error_message
+      - id
+      - intensity
+      - language
+      - score
+      - started_at
+      - status
+      - submission
+      - summary
+    RoastRunStatus:
+      type: object
+      description: |-
+        Minimal payload purpose-built for GET /api/v1/roasts/{id}/status/
+        polling — no nested sections/findings, so repeated polling stays
+        cheap.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ExtractionStatusEnum'
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        error_message:
+          type: string
+          readOnly: true
+      required:
+      - completed_at
+      - error_message
+      - id
+      - started_at
+      - status
+    RoastSection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        key:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        content:
+          type: string
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        metadata:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - created_at
+      - id
+      - key
+      - metadata
+      - position
+      - title
+    SeverityEnum:
+      enum:
+      - info
+      - low
+      - medium
+      - high
+      - critical
+      type: string
+      description: |-
+        * `info` - Info
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+        * `critical` - Critical
+    Submission:
+      type: object
+      description: |-
+        Full detail representation, returned to the owner on create/retrieve/
+        update. Includes `extracted_text` and `metadata` — safe here because
+        every endpoint that uses this serializer is owner-scoped (see
+        SubmissionViewSet.get_queryset). There is no public-facing endpoint
+        yet; a future public/shared-roast view (the sharing app) must build
+        its own explicit serializer rather than reusing this one, so it can't
+        accidentally leak extracted_text.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        submission_type:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionTypeEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          readOnly: true
+        source_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+        extracted_text:
+          type: string
+          readOnly: true
+        metadata:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionAsset'
+          readOnly: true
+      required:
+      - assets
+      - created_at
+      - error_message
+      - extracted_text
+      - id
+      - metadata
+      - source_url
+      - status
+      - submission_type
+      - title
+      - updated_at
+      - visibility
+    SubmissionAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        original_filename:
+          type: string
+          readOnly: true
+        content_type:
+          type: string
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - created_at
+      - id
+      - original_filename
+      - size_bytes
+    SubmissionCreateRequest:
+      type: object
+      properties:
+        submission_type:
+          $ref: '#/components/schemas/SubmissionTypeEnum'
+        title:
+          type: string
+          default: ''
+          maxLength: 255
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          default: private
+        source_url:
+          type: string
+          format: uri
+          minLength: 1
+          maxLength: 2048
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+      required:
+      - submission_type
+    SubmissionList:
+      type: object
+      description: |-
+        Lighter representation for the list endpoint — omits `extracted_text`
+        and `metadata`, which can be large and aren't needed to render a
+        list view.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        submission_type:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionTypeEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          readOnly: true
+        source_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionAsset'
+          readOnly: true
+      required:
+      - assets
+      - created_at
+      - error_message
+      - id
+      - source_url
+      - status
+      - submission_type
+      - title
+      - updated_at
+      - visibility
+    SubmissionStatus:
+      type: object
+      description: |-
+        Minimal payload purpose-built for GET /api/v1/submissions/{id}/status/
+        polling while extraction runs in the background — mirrors
+        apps.roasts.serializers.RoastRunStatusSerializer.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - error_message
+      - id
+      - status
+      - updated_at
+    SubmissionStatusEnum:
+      enum:
+      - draft
+      - processing
+      - ready
+      - failed
+      - deleted
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `processing` - Processing
+        * `ready` - Ready
+        * `failed` - Failed
+        * `deleted` - Deleted
+    SubmissionTypeEnum:
+      enum:
+      - resume
+      - website
+      - github
+      type: string
+      description: |-
+        * `resume` - Resume
+        * `website` - Website
+        * `github` - GitHub Profile
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        display_name:
+          type: string
+          readOnly: true
+        avatar_url:
+          type: string
+          format: uri
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - avatar_url
+      - created_at
+      - display_name
+      - email
+      - id
+    VisibilityEnum:
+      enum:
+      - private
+      - link
+      - public
+      type: string
+      description: |-
+        * `private` - Private
+        * `link` - Link
+        * `public` - Public
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

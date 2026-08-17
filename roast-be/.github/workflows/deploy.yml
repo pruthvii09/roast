@@ -1,0 +1,32 @@
+name: Deploy to EC2
+
+# Push to main -> SSH into the EC2 box -> git pull + docker compose up
+# --build. No container registry, no build-in-CI — the box builds its own
+# image (see scripts/deploy.sh). Simpler to reason about for a hobby
+# project; if builds ever get too slow/heavy for the free-tier instance,
+# switching to "build here, push to ghcr.io, box just pulls" is the
+# natural next step (docs/DEPLOY_EC2.md notes this).
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   EC2_HOST        the instance's public IP or hostname
+#   EC2_USER        ssh username, e.g. "ubuntu"
+#   EC2_SSH_KEY     the private key matching the .pem you launched the
+#                   instance with (paste the whole file, including the
+#                   -----BEGIN/END----- lines)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # lets you trigger a redeploy manually from the Actions tab without an empty commit
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: bash /opt/roast-be/scripts/deploy.sh

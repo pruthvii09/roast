@@ -1,0 +1,25 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Long lines here are prompt/content text (the LLM-facing prompt template
+# and its embedded JSON schema example), not code — wrapping them would
+# just make the actual prompt text harder to read/edit.
+"apps/ai/prompts/templates.py" = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+extend-exclude = "migrations"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = "test_*.py"
+addopts = "--strict-markers -ra"
+testpaths = ["apps"]
