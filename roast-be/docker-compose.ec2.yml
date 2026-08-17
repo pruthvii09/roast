@@ -18,7 +18,7 @@
 #    file scripts/ec2-bootstrap.sh sets up, rather than being hard
 #    OOM-killed the instant it touches its mem_limit.
 #
-# Usage (run from /opt/roast-be, with a real .env already in place —
+# Usage (run from /opt/roast/roast-be, with a real .env already in place —
 # NOT .env.prod: docker-compose.prod.yml's services hardcode
 # `env_file: - .env`, a literal path --env-file doesn't redirect, so the
 # real runtime file must actually be named .env):

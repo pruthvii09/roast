@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time setup for a fresh Ubuntu 24.04 EC2 instance. Run once over SSH:
 #   ssh ubuntu@<instance-ip>
-#   curl -fsSL https://raw.githubusercontent.com/<you>/roast-be/main/scripts/ec2-bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/<you>/roast/main/roast-be/scripts/ec2-bootstrap.sh | bash
 # (or scp this file over and run it directly, if you'd rather not curl|bash
 # something — either is fine, this script doesn't do anything it doesn't
 # print to stdout as it goes.)
@@ -12,7 +12,11 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-}"
-DEPLOY_DIR="${DEPLOY_DIR:-/opt/roast-be}"
+# This repo is a monorepo (roast-be + roast-fe) — REPO_DIR is the clone
+# root, DEPLOY_DIR is the roast-be subfolder where docker-compose.prod.yml
+# and .env actually live and where scripts/deploy.sh cd's to.
+REPO_DIR="${REPO_DIR:-/opt/roast}"
+DEPLOY_DIR="${DEPLOY_DIR:-$REPO_DIR/roast-be}"
 SWAP_FILE="/swapfile"
 SWAP_SIZE_MB=2048
 
@@ -54,19 +58,19 @@ else
   echo "    Docker already installed, skipping"
 fi
 
-echo "==> Preparing deploy directory: $DEPLOY_DIR"
-if [ ! -d "$DEPLOY_DIR/.git" ]; then
+echo "==> Preparing repo checkout: $REPO_DIR"
+if [ ! -d "$REPO_DIR/.git" ]; then
   if [ -z "$REPO_URL" ]; then
-    echo "    REPO_URL not set and $DEPLOY_DIR isn't a git checkout yet."
-    echo "    Re-run as: REPO_URL=https://github.com/<you>/roast-be.git bash ec2-bootstrap.sh"
-    echo "    (or clone it yourself into $DEPLOY_DIR before re-running)"
+    echo "    REPO_URL not set and $REPO_DIR isn't a git checkout yet."
+    echo "    Re-run as: REPO_URL=git@github.com:<you>/roast.git bash ec2-bootstrap.sh"
+    echo "    (or clone it yourself into $REPO_DIR before re-running)"
     exit 1
   fi
-  sudo mkdir -p "$DEPLOY_DIR"
-  sudo chown "$USER":"$USER" "$DEPLOY_DIR"
-  git clone "$REPO_URL" "$DEPLOY_DIR"
+  sudo mkdir -p "$REPO_DIR"
+  sudo chown "$USER":"$USER" "$REPO_DIR"
+  git clone "$REPO_URL" "$REPO_DIR"
 else
-  echo "    $DEPLOY_DIR already a git checkout, skipping clone"
+  echo "    $REPO_DIR already a git checkout, skipping clone"
 fi
 
 if [ ! -f "$DEPLOY_DIR/.env" ]; then

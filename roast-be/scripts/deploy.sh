@@ -11,7 +11,7 @@
 # stay in sync if neither is told to use a different filename.
 set -euo pipefail
 
-DEPLOY_DIR="${DEPLOY_DIR:-/opt/roast-be}"
+DEPLOY_DIR="${DEPLOY_DIR:-/opt/roast/roast-be}"
 cd "$DEPLOY_DIR"
 
 echo "==> Pulling latest code"

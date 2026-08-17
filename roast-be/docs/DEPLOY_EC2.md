@@ -48,35 +48,41 @@ SSH in once:
 ssh -i /path/to/your-key.pem ubuntu@<elastic-ip>
 ```
 
-You haven't pushed this repo to GitHub yet at this point, so the bootstrap script needs the repo
-URL explicitly the first time:
+This repo (`roast-be` + `roast-fe`) is already a monorepo pushed to
+`git@github.com:pruthvii09/roast.git`, so the bootstrap script can pull straight from there:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<you>/roast-be/main/scripts/ec2-bootstrap.sh -o bootstrap.sh
-REPO_URL=https://github.com/<you>/roast-be.git bash bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/pruthvii09/roast/main/roast-be/scripts/ec2-bootstrap.sh -o bootstrap.sh
+REPO_URL=git@github.com:pruthvii09/roast.git bash bootstrap.sh
 ```
-(That `curl` will 404 until you've actually pushed the repo — see step 3 first if you're doing
-this in order. Alternatively just `scp scripts/ec2-bootstrap.sh` up and run it locally, or paste
-its contents into a file over SSH — it doesn't need to come from GitHub, that's just convenient
-once the repo exists.)
+(SSH clone needs a deploy key on the box — see the note after this list. Alternatively use the
+HTTPS clone URL `https://github.com/pruthvii09/roast.git` for a public repo, or `scp
+scripts/ec2-bootstrap.sh` up and run it locally.)
 
 This script (idempotent, safe to re-run):
 - Installs a 2GB swap file — **not optional** on a 1GB-RAM instance. Without it, the first
   `docker compose build` (compiling Python deps) will very likely OOM-kill itself partway
   through.
 - Installs Docker Engine + the Compose plugin from Docker's official apt repo.
-- Clones this repo into `/opt/roast-be`.
+- Clones the whole monorepo into `/opt/roast` (`REPO_DIR`); the Django app itself lives at
+  `/opt/roast/roast-be` (`DEPLOY_DIR`) — that's where `.env` and `docker-compose.prod.yml`
+  actually live and where `scripts/deploy.sh` operates from.
 - Copies `.env.prod.example` to `.env` if one doesn't exist yet — it must be named exactly
   `.env`, not `.env.prod`: `docker-compose.prod.yml`'s services hardcode `env_file: - .env`
   (a literal path), which the `--env-file` CLI flag does **not** redirect — that flag only
   affects `${VAR}` substitution within the compose YAML itself. Naming it anything else means
   the containers silently get none of your real config.
 
+If the repo is private, generate a dedicated SSH key pair on the box and add its public half as a
+**deploy key** (read-only is fine) on the GitHub repo (Settings -> Deploy keys) before running the
+`REPO_URL=git@github.com:...` clone — a plain `ssh-keygen` with no passphrase, then `cat
+~/.ssh/id_ed25519.pub` to copy it, works fine for this.
+
 Then:
 ```bash
 # if this was Docker's first install on the box:
 newgrp docker
 
-nano /opt/roast-be/.env   # fill in every <CHANGE ME>
+nano /opt/roast/roast-be/.env   # fill in every <CHANGE ME>
 ```
 
 Fields that need real values — see `.env.prod.example`'s comments for what each does:
@@ -89,23 +95,14 @@ Fields that need real values — see `.env.prod.example`'s comments for what eac
 
 ## 3. Push this repo to GitHub
 
-This repo isn't a git checkout yet. From your machine:
-```bash
-cd roast-be
-git init
-git add .
-git commit -m "Initial commit"
-gh repo create roast-be --private --source=. --remote=origin --push
-# or, without the gh CLI: create the repo on github.com first, then
-#   git remote add origin https://github.com/<you>/roast-be.git
-#   git push -u origin main
-```
+Already done — this repo lives at `git@github.com:pruthvii09/roast.git` and step 2's bootstrap
+already cloned it onto the box. Nothing to do here.
 
 ## 4. First manual deploy
 
 Back on the SSH session:
 ```bash
-cd /opt/roast-be
+cd /opt/roast/roast-be
 bash scripts/deploy.sh
 ```
 This builds the image and starts `db`, `redis`, `web`, `worker`, `beat`, and `caddy`. The first
@@ -120,8 +117,9 @@ Caddy can't get a cert yet (DNS/security-group issue), `docker compose -f docker
 
 ## 5. Deploy the frontend to Vercel
 
-1. vercel.com -> Add New -> Project -> import the `roast-fe` GitHub repo (push it the same way as
-   step 3, as its own separate repo).
+1. vercel.com -> Add New -> Project -> import the `pruthvii09/roast` GitHub repo. In the project's
+   "Root Directory" setting, point it at `roast-fe` (this is a monorepo — Vercel needs to know
+   which subfolder to build).
 2. Set the environment variable `NEXT_PUBLIC_API_BASE_URL` to `https://<your-sslip.io-hostname>`.
 3. Deploy. Vercel gives you a `https://<something>.vercel.app` URL.
 4. Go back to `.env` on the EC2 box and set `CORS_ALLOWED_ORIGINS` /
@@ -130,7 +128,7 @@ Caddy can't get a cert yet (DNS/security-group issue), `docker compose -f docker
 
 ## 6. Wire up auto-deploy on push
 
-In the `roast-be` GitHub repo -> Settings -> Secrets and variables -> Actions, add:
+In the `pruthvii09/roast` GitHub repo -> Settings -> Secrets and variables -> Actions, add:
 - `EC2_HOST` — the Elastic IP
 - `EC2_USER` — `ubuntu`
 - `EC2_SSH_KEY` — the full contents of the `.pem` file from step 1 (including the
