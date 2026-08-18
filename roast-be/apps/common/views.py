@@ -1,3 +1,4 @@
+from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -8,7 +9,12 @@ from .health import check_celery, check_database, check_redis
 
 @extend_schema(
     tags=["health"],
-    responses={200: {"type": "object", "properties": {"status": {"type": "string"}}}},
+    responses={
+        200: {
+            "type": "object",
+            "properties": {"status": {"type": "string"}, "version": {"type": "string"}},
+        }
+    },
 )
 class LivenessView(APIView):
     """
@@ -21,7 +27,7 @@ class LivenessView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, *args, **kwargs):
-        return Response({"status": "ok"})
+        return Response({"status": "ok", "version": settings.APP_VERSION})
 
 
 @extend_schema(
