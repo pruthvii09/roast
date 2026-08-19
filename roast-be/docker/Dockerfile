@@ -4,7 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libmagic1 \
+    && apt-get install -y --no-install-recommends libmagic1 gosu \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd --create-home --uid 1000 appuser
@@ -16,7 +16,6 @@ FROM base AS dev
 RUN pip install --no-cache-dir -r requirements/dev.txt -r requirements/test.txt
 COPY . /app
 RUN chown -R appuser:appuser /app
-USER appuser
 ENTRYPOINT ["docker/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
@@ -24,7 +23,6 @@ FROM base AS prod
 RUN pip install --no-cache-dir -r requirements/base.txt
 COPY . /app
 RUN chown -R appuser:appuser /app
-USER appuser
 ENTRYPOINT ["docker/entrypoint.sh"]
 # --workers: a starting point, not a universal answer — tune to actual
 #   CPU count in real deployments (docker-compose.prod.yml/orchestrator

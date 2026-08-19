@@ -293,6 +293,20 @@ STORAGE_BACKEND = env("STORAGE_BACKEND", default="local")
 MEDIA_ROOT = env("MEDIA_ROOT", default=str(BASE_DIR / "media"))
 MEDIA_URL = "media/"  # not served directly; downloads are gated through the API
 
+if STORAGE_BACKEND == "cloudinary":
+    # No defaults: fail fast at settings-load time if this backend is
+    # selected but misconfigured, rather than at first upload — mirrors
+    # prod.py's DJANGO_SECRET_KEY = env("DJANGO_SECRET_KEY") pattern.
+    CLOUDINARY_CLOUD_NAME = env("CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY = env("CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET = env("CLOUDINARY_API_SECRET")
+else:
+    CLOUDINARY_CLOUD_NAME = env("CLOUDINARY_CLOUD_NAME", default="")
+    CLOUDINARY_API_KEY = env("CLOUDINARY_API_KEY", default="")
+    CLOUDINARY_API_SECRET = env("CLOUDINARY_API_SECRET", default="")
+
+CLOUDINARY_HTTP_TIMEOUT_SECONDS = env.float("CLOUDINARY_HTTP_TIMEOUT_SECONDS", default=10.0)
+
 MAX_UPLOAD_SIZE_BYTES = env.int("MAX_UPLOAD_SIZE_BYTES", default=10 * 1024 * 1024)
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE_BYTES
 

@@ -12,6 +12,12 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
+# Exempted because both the `web` service's Docker HEALTHCHECK and
+# scripts/deploy.sh's readiness probe hit these paths over plain HTTP
+# directly against the container (bypassing Caddy, which is what sets
+# X-Forwarded-Proto for real traffic) — without this they'd always be
+# redirected to https and fail, since gunicorn itself only serves HTTP.
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/"]
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True

@@ -13,3 +13,4 @@ gunicorn==23.0.0
 openai==1.57.0
 pydantic==2.10.3
 pypdf==5.1.0
+cloudinary==1.46.0

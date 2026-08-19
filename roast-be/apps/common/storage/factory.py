@@ -2,10 +2,12 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import StorageBackend
+from .cloudinary import CloudinaryStorage
 from .local import LocalFileSystemStorage
 
 _BACKENDS = {
     "local": LocalFileSystemStorage,
+    "cloudinary": CloudinaryStorage,
 }
 
 
