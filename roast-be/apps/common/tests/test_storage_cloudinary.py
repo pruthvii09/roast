@@ -1,3 +1,4 @@
+import io
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,6 +8,12 @@ from apps.common.storage import get_storage
 from apps.common.storage.cloudinary import CloudinaryStorage
 
 pytestmark = pytest.mark.django_db(transaction=False)
+
+
+class _NamedBytesIO(io.BytesIO):
+    """Stands in for Django's UploadedFile, which always carries a `.name`."""
+
+    name = "resume.pdf"
 
 
 @pytest.fixture(autouse=True)
@@ -22,7 +29,7 @@ def test_save_strips_extension_and_returns_public_id_from_response():
     with patch("apps.common.storage.cloudinary.cloudinary.uploader.upload") as upload:
         upload.return_value = {"public_id": "submissions/abc/file", "bytes": 11}
 
-        returned_key = storage.save("submissions/abc/file.pdf", MagicMock())
+        returned_key = storage.save("submissions/abc/file.pdf", _NamedBytesIO(b"hello world"))
 
     assert returned_key == "submissions/abc/file"
     _, kwargs = upload.call_args
@@ -33,7 +40,23 @@ def test_save_strips_extension_and_returns_public_id_from_response():
     assert kwargs["public_id"] == "submissions/abc/file"
     assert kwargs["resource_type"] == "raw"
     assert kwargs["type"] == "authenticated"
-    assert "format" not in kwargs
+
+
+def test_save_uploads_an_unnamed_copy_to_avoid_cloudinary_reappending_extension():
+    # Cloudinary auto-detects format from the source object's `.name`
+    # (independent of use_filename=False) and re-appends it server-side —
+    # confirmed against the real API. `save()` must upload a plain,
+    # unnamed BytesIO so Cloudinary has nothing to detect from.
+    storage = CloudinaryStorage()
+    with patch("apps.common.storage.cloudinary.cloudinary.uploader.upload") as upload:
+        upload.return_value = {"public_id": "submissions/abc/file", "bytes": 11}
+
+        storage.save("submissions/abc/file.pdf", _NamedBytesIO(b"hello world"))
+
+    args, _ = upload.call_args
+    uploaded_obj = args[0]
+    assert not hasattr(uploaded_obj, "name")
+    assert uploaded_obj.getvalue() == b"hello world"
 
 
 def test_open_builds_signed_url_and_returns_response():

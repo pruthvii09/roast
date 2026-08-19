@@ -1,3 +1,4 @@
+import io
 import time
 from typing import IO
 from urllib.error import HTTPError
@@ -46,8 +47,17 @@ class CloudinaryStorage(StorageBackend):
         # come from SubmissionAsset.original_filename/content_type, never
         # from the storage key.
         public_id = key.rsplit(".", 1)[0] if "." in key else key
+        # Also strip any filename hint on the source object itself.
+        # Django's UploadedFile always carries a `.name` (e.g.
+        # "resume.pdf") — Cloudinary auto-detects the format from that
+        # name and re-appends it to the public_id server-side regardless
+        # of the public_id we requested or `use_filename=False`
+        # (confirmed against the real API), silently reintroducing the
+        # exact signature-mismatch bug the stripping above is meant to
+        # avoid. An unnamed BytesIO gives it nothing to detect.
+        unnamed_file = io.BytesIO(file_obj.read())
         result = cloudinary.uploader.upload(
-            file_obj,
+            unnamed_file,
             public_id=public_id,
             resource_type=_RESOURCE_TYPE,
             type=_DELIVERY_TYPE,
