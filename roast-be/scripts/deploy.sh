@@ -24,17 +24,29 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-echo "==> Building and starting the stack (this box is memory-constrained — a"
-echo "    from-scratch build can take a few minutes; that's expected, not stuck)"
-docker compose -f docker-compose.prod.yml -f docker-compose.ec2.yml up -d --build
+COMPOSE="docker compose -f docker-compose.prod.yml -f docker-compose.ec2.yml"
 
-echo "==> Pruning old, unreferenced images (keeps the 30GB free-tier EBS volume from filling up)"
-docker image prune -f
+echo "==> Building and starting the stack (this box is disk-constrained — the"
+echo "    root volume is ~7GB, not the 30GB free-tier allowance; building all"
+echo "    three service images at once via 'up --build' needs more peak disk"
+echo "    than that leaves free and reliably fails with ENOSPC mid-build. So:"
+echo "    build+recreate one service at a time, pruning between each, keeping"
+echo "    peak usage to roughly one image's worth rather than three's)."
+for service in web worker beat; do
+  echo "==> Building $service"
+  $COMPOSE build "$service"
+  echo "==> Recreating $service"
+  $COMPOSE up -d --no-build "$service"
+  echo "==> Reclaiming space from the image $service just replaced"
+  docker image prune -af >/dev/null
+done
+
+docker builder prune -af >/dev/null
 
 echo "==> Waiting for web to report ready..."
 for _ in $(seq 1 20); do
-  if docker compose -f docker-compose.prod.yml -f docker-compose.ec2.yml \
-      exec -T web python -c "import urllib.request as u; u.urlopen('http://localhost:8000/api/v1/health/ready/', timeout=3)" 2>/dev/null; then
+  if $COMPOSE exec -T web python -c \
+      "import urllib.request as u; u.urlopen('http://localhost:8000/api/v1/health/ready/', timeout=3)" 2>/dev/null; then
     echo "==> Deploy complete — web is healthy."
     exit 0
   fi
@@ -42,5 +54,5 @@ for _ in $(seq 1 20); do
 done
 
 echo "WARNING: web didn't report ready within ~60s. Check logs:"
-echo "  docker compose -f docker-compose.prod.yml -f docker-compose.ec2.yml logs --tail 100 web"
+echo "  $COMPOSE logs --tail 100 web"
 exit 1
