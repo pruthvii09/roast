@@ -80,7 +80,7 @@ def create_submission(
         )
         checksum = _compute_checksum(uploaded_file)
         storage_key = generate_storage_key(namespace="submissions", extension=extension)
-        get_storage().save(storage_key, uploaded_file)
+        storage_key = get_storage().save(storage_key, uploaded_file)
 
         with transaction.atomic():
             submission = Submission.objects.create(
