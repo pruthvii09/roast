@@ -73,6 +73,10 @@ function LoginForm() {
       toast.success("Welcome back")
       router.replace(next)
     } catch (error) {
+      if (isApiError(error) && error.code === "EMAIL_NOT_VERIFIED") {
+        router.push(`/verify-email?email=${encodeURIComponent(values.email)}&next=${encodeURIComponent(next)}`)
+        return
+      }
       if (isApiError(error) && error.code === "VALIDATION_ERROR") {
         const applied = applyApiFieldErrors(form, error.details)
         if (!applied) setFormError(getAuthErrorMessage(error))
@@ -119,7 +123,15 @@ function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Password</FormLabel>
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <FormControl>
                     <PasswordInput autoComplete="current-password" {...field} />
                   </FormControl>

@@ -18,6 +18,14 @@ _ERROR_CODES = {
 
 
 def _error_code_for(exc):
+    # A generic extension point: any app can define its own distinctly-
+    # coded exception (see apps.accounts.exceptions.EmailNotVerifiedError)
+    # without apps.common ever needing to import from it. Checked before
+    # the class-based table below since e.g. EmailNotVerifiedError IS an
+    # AuthenticationFailed and would otherwise match that entry first.
+    custom_code = getattr(exc, "api_error_code", None)
+    if custom_code:
+        return custom_code
     for exc_type, code in _ERROR_CODES.items():
         if isinstance(exc, exc_type):
             return code

@@ -11,6 +11,10 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     display_name = factory.Faker("name")
+    # Verified by default — most tests just want a normal working login;
+    # OTP/verification-flow tests override this explicitly where the
+    # unverified state is the thing under test.
+    email_verified = True
 
     @factory.post_generation
     def password(self, create, extracted, **kwargs):

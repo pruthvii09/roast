@@ -18,5 +18,9 @@ export const queryKeys = {
   shares: {
     forRoast: (roastId: string) => ["shares", "roast", roastId] as const,
     public: (token: string) => ["shares", "public", token] as const,
+    wallOfFame: (params: object = {}) => ["shares", "wall-of-fame", params] as const,
+  },
+  referrals: {
+    me: ["referrals", "me"] as const,
   },
 }

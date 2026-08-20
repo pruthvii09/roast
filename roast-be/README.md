@@ -406,6 +406,27 @@ seconds until the oldest in-window roast ages out) — the same `THROTTLED` erro
 envelope as any other rate limit. `GET /api/v1/roasts/quota/` lets a client check remaining
 quota ahead of time rather than only finding out via a 429.
 
+### Email OTP (verification & password reset)
+
+Transactional email goes through Resend exclusively — there is no SMTP/Django-email-backend
+configuration anywhere, and `apps.notifications.emails.send_email` is the single place any code
+is allowed to call it (see that module's docstring). Registration no longer issues login-ready
+accounts: `apps.accounts.services.generate_and_send_otp` emails a 6-digit code
+(`OTP_TTL_MINUTES`, default 10) and `User.email_verified` stays `False` until
+`POST /api/v1/auth/verify-email/` consumes it — `apps.accounts.serializers.LoginSerializer`
+rejects a correct password on an unverified account with a distinct `EMAIL_NOT_VERIFIED` error
+code (see `apps.common.exception_handler`'s `api_error_code` extension point) rather than the
+generic "no active account" message, so the frontend can route the user to the verification step
+instead of showing a wrong-password-looking error. The same `EmailOTP` model and
+`apps.accounts.services.verify_otp` power `POST /api/v1/auth/password-reset/request/` +
+`/confirm/`. A code is checked against `OTP_MAX_ATTEMPTS` (default 5) and expires on its own; all
+four OTP-adjacent endpoints (verify, resend, password-reset request/confirm) are throttled far
+tighter than normal auth endpoints, and the resend/request endpoints always respond `200`
+regardless of whether the account exists, so neither can be used to enumerate registered emails.
+Accounts that existed before this feature shipped were grandfathered in as verified by a
+one-time data migration (`apps/accounts/migrations/0004_...`) — only new registrations start
+unverified.
+
 ### Prompt injection resistance
 
 `extracted_text` (resume/website/GitHub content) and `submission.title` are, structurally,

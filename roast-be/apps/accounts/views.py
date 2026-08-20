@@ -12,13 +12,20 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.common.mixins import EnvelopeMixin
 
+from .models import OTPPurpose
 from .serializers import (
     AccountDeleteSerializer,
     ChangePasswordSerializer,
+    LoginSerializer,
     MeUpdateSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     RegisterSerializer,
+    ResendVerificationSerializer,
     UserSerializer,
+    VerifyEmailSerializer,
 )
+from .services import generate_and_send_otp
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +48,34 @@ class RegisterView(EnvelopeMixin, generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        referral_code = serializer.validated_data.get("referral_code")
         user = serializer.save()
         logger.info("User registered", extra={"user_id": str(user.id), "email": user.email})
+
+        try:
+            from apps.referrals.services import redeem_referral_code
+
+            redeem_referral_code(referred=user, code=referral_code)
+        except Exception:
+            # Never let a referral-handling bug turn a successful signup
+            # into a failed registration response.
+            logger.exception("Referral redemption failed for new user %s", user.id)
+
+        try:
+            generate_and_send_otp(user=user, purpose=OTPPurpose.EMAIL_VERIFICATION)
+        except Exception:
+            # Same rule as referral redemption above — the account was
+            # created successfully; a failure to send the verification
+            # email shouldn't turn that into a failed response. The user
+            # can still request a new code via /auth/verify-email/resend/.
+            logger.exception("Verification email dispatch failed for new user %s", user.id)
+
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(tags=["auth"])
 class LoginView(EnvelopeMixin, TokenObtainPairView):
+    serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth-login"
@@ -152,3 +180,87 @@ class ChangePasswordView(EnvelopeMixin, generics.GenericAPIView):
         serializer.save()
         logger.info("Password changed", extra={"user_id": str(request.user.id)})
         return Response({"detail": "Password changed successfully."})
+
+
+@extend_schema(tags=["auth"], request=VerifyEmailSerializer)
+class VerifyEmailView(EnvelopeMixin, generics.GenericAPIView):
+    """
+    POST /api/v1/auth/verify-email/ — anonymous. On success, issues JWT
+    tokens directly (same shape as LoginView) so the frontend can skip a
+    second manual login immediately after an account was just created.
+    """
+
+    serializer_class = VerifyEmailSerializer
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth-verify-email"
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        refresh = RefreshToken.for_user(user)
+        logger.info("Email verified", extra={"user_id": str(user.id)})
+        return Response({"refresh": str(refresh), "access": str(refresh.access_token)})
+
+
+@extend_schema(tags=["auth"], request=ResendVerificationSerializer, responses={200: None})
+class ResendVerificationEmailView(EnvelopeMixin, generics.GenericAPIView):
+    """
+    POST /api/v1/auth/verify-email/resend/ — anonymous. Always responds
+    200 with the same generic message regardless of whether the account
+    exists or is already verified, so this can never be used to probe
+    which emails are registered.
+    """
+
+    serializer_class = ResendVerificationSerializer
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth-resend-otp"
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "If that account exists and isn't verified yet, a new code has been sent."}
+        )
+
+
+@extend_schema(tags=["auth"], request=PasswordResetRequestSerializer, responses={200: None})
+class RequestPasswordResetView(EnvelopeMixin, generics.GenericAPIView):
+    """POST /api/v1/auth/password-reset/request/ — anonymous, same no-enumeration rule as above."""
+
+    serializer_class = PasswordResetRequestSerializer
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth-password-reset-request"
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "If that account exists, a password reset code has been sent."})
+
+
+@extend_schema(tags=["auth"], request=PasswordResetConfirmSerializer, responses={200: None})
+class ConfirmPasswordResetView(EnvelopeMixin, generics.GenericAPIView):
+    """
+    POST /api/v1/auth/password-reset/confirm/ — anonymous. On success,
+    apps.accounts.services.reset_password_with_otp has already blacklisted
+    every other outstanding session (same as ChangePasswordView).
+    """
+
+    serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth-password-reset-confirm"
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        logger.info("Password reset via OTP", extra={"user_id": str(user.id)})
+        return Response(
+            {"detail": "Password reset successfully. Please log in with your new password."}
+        )

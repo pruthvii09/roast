@@ -32,6 +32,30 @@ def test_login_inactive_user_rejected(api_client, user_factory):
     assert response.status_code == 401
 
 
+def test_login_unverified_user_rejected_with_distinct_code(api_client, user_factory):
+    user_factory(email="unverified@example.com", password="Str0ngPassw0rd!", email_verified=False)
+    response = api_client.post(
+        "/api/v1/auth/login/", {"email": "unverified@example.com", "password": "Str0ngPassw0rd!"}
+    )
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "EMAIL_NOT_VERIFIED"
+
+
+def test_login_unverified_user_wrong_password_still_generic(api_client, user_factory):
+    """
+    A wrong password against an unverified account must NOT reveal
+    "you're unverified" — only a correct password + unverified triggers
+    the distinct error, otherwise this would leak account state to
+    someone who doesn't actually know the password.
+    """
+    user_factory(email="unverified2@example.com", password="Str0ngPassw0rd!", email_verified=False)
+    response = api_client.post(
+        "/api/v1/auth/login/", {"email": "unverified2@example.com", "password": "wrong"}
+    )
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "AUTHENTICATION_FAILED"
+
+
 def test_refresh_returns_new_access_token(api_client, user_factory):
     user_factory(email="refresh@example.com", password="Str0ngPassw0rd!")
     login = api_client.post(

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, Sparkles } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -53,12 +53,25 @@ const registerSchema = z
 
 type RegisterFormValues = z.infer<typeof registerSchema>
 
+// Loose client-side sanity check only — real codes are 8 uppercase
+// alphanumeric chars, but any garbage that slips past this is still
+// handled safely server-side (an unknown code is a silent no-op, see
+// apps.referrals.services.redeem_referral_code's docstring). This just
+// avoids forwarding an obviously-mangled query param.
+const REFERRAL_CODE_PATTERN = /^[A-Za-z0-9]{1,32}$/
+
+function getReferralCode(raw: string | null): string | undefined {
+  if (!raw || !REFERRAL_CODE_PATTERN.test(raw)) return undefined
+  return raw
+}
+
 function RegisterForm() {
-  const { status, register: registerUser, login } = useAuth()
+  const { status, register: registerUser } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [formError, setFormError] = useState<string | null>(null)
   const next = getSafeNextPath(searchParams.get("next"))
+  const referralCode = getReferralCode(searchParams.get("ref"))
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -84,6 +97,7 @@ function RegisterForm() {
         email: values.email,
         password: values.password,
         display_name: values.display_name?.trim() || undefined,
+        referral_code: referralCode,
       })
     } catch (error) {
       if (isApiError(error) && error.code === "VALIDATION_ERROR") {
@@ -95,18 +109,14 @@ function RegisterForm() {
       return
     }
 
-    // Registration never returns tokens — log in with the same credentials
-    // to establish a session. If that specific step fails (e.g. throttled),
-    // the account still exists, so send them to log in rather than showing
-    // a scary error on what was actually a successful signup.
-    try {
-      await login({ email: values.email, password: values.password })
-      toast.success("Account created")
-      router.replace(next)
-    } catch {
-      toast.success("Account created", { description: "Please log in to continue." })
-      router.replace(`/login?next=${encodeURIComponent(next)}`)
-    }
+    // Registration never returns tokens, and now the account can't log in
+    // until its email is verified anyway (see apps.accounts.serializers.
+    // LoginSerializer) — go straight to the OTP step instead of attempting
+    // a login that would just fail.
+    toast.success("Account created", { description: "Check your inbox for a verification code." })
+    router.replace(
+      `/verify-email?email=${encodeURIComponent(values.email)}&next=${encodeURIComponent(next)}`
+    )
   }
 
   return (
@@ -184,6 +194,12 @@ function RegisterForm() {
                 </FormItem>
               )}
             />
+            {referralCode ? (
+              <p className="flex items-center justify-center gap-1.5 text-center text-sm font-medium text-primary">
+                <Sparkles className="size-4" aria-hidden />
+                You&apos;ll get +1 bonus roast this week
+              </p>
+            ) : null}
             <Button
               type="submit"
               disabled={form.formState.isSubmitting}

@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "apps.ai",
     "apps.sharing",
     "apps.feedback",
+    "apps.referrals",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -177,11 +179,20 @@ REST_FRAMEWORK = {
         "auth-refresh": env("THROTTLE_AUTH_REFRESH", default="30/min"),
         "auth-logout": env("THROTTLE_AUTH_LOGOUT", default="30/min"),
         "auth-password-change": env("THROTTLE_AUTH_PASSWORD_CHANGE", default="5/hour"),
+        "auth-verify-email": env("THROTTLE_AUTH_VERIFY_EMAIL", default="10/hour"),
+        "auth-resend-otp": env("THROTTLE_AUTH_RESEND_OTP", default="3/hour"),
+        "auth-password-reset-request": env(
+            "THROTTLE_AUTH_PASSWORD_RESET_REQUEST", default="5/hour"
+        ),
+        "auth-password-reset-confirm": env(
+            "THROTTLE_AUTH_PASSWORD_RESET_CONFIRM", default="10/hour"
+        ),
         "submission-create": env("THROTTLE_SUBMISSION_CREATE", default="20/hour"),
         "roast-create": env("THROTTLE_ROAST_CREATE", default="10/hour"),
         "share-link-create": env("THROTTLE_SHARE_LINK_CREATE", default="20/hour"),
         "share-public-view": env("THROTTLE_SHARE_PUBLIC_VIEW", default="120/hour"),
         "share-public-react": env("THROTTLE_SHARE_PUBLIC_REACT", default="30/hour"),
+        "wall-of-fame-list": env("THROTTLE_WALL_OF_FAME_LIST", default="120/hour"),
     },
 }
 
@@ -413,6 +424,13 @@ ROAST_ENGINE_VERSION = env("ROAST_ENGINE_VERSION", default="v1")
 ROAST_WEEKLY_QUOTA = env.int("ROAST_WEEKLY_QUOTA", default=3)
 ROAST_QUOTA_WINDOW_DAYS = env.int("ROAST_QUOTA_WINDOW_DAYS", default=7)
 
+# Referral bonus (apps.referrals) — added on top of ROAST_WEEKLY_QUOTA for
+# REFERRAL_BONUS_WINDOW_DAYS when a referral is active; see
+# apps.referrals.selectors.get_active_referral_bonus and
+# apps.roasts.services._effective_weekly_limit for how the two combine.
+REFERRAL_BONUS_AMOUNT = env.int("REFERRAL_BONUS_AMOUNT", default=1)
+REFERRAL_BONUS_WINDOW_DAYS = env.int("REFERRAL_BONUS_WINDOW_DAYS", default=7)
+
 # Same purpose as EXTRACTION_TASK_*_TIME_LIMIT_SECONDS above: bounds how
 # long a single process_roast_run execution may run (the AI provider call
 # itself is already bounded by AI_REQUEST_TIMEOUT_SECONDS x AI_MAX_ATTEMPTS
@@ -440,6 +458,22 @@ CORS_ALLOW_CREDENTIALS = env.bool("CORS_ALLOW_CREDENTIALS", default=False)
 # Base URL of the frontend, used to build the public share_url returned by
 # apps.sharing.serializers.ShareLinkSerializer (e.g. f"{FRONTEND_SHARE_BASE_URL}/r/{token}").
 FRONTEND_SHARE_BASE_URL = env("FRONTEND_SHARE_BASE_URL", default="http://localhost:3000")
+
+# --------------------------------------------------------------------------
+# Transactional email (apps.notifications) — Resend is the only email
+# backend; there is no SMTP/Django-email-backend configuration anywhere.
+# DEFAULT_FROM_EMAIL's domain must be verified in the Resend dashboard.
+# --------------------------------------------------------------------------
+RESEND_API_KEY = env("RESEND_API_KEY", default="")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@example.com")
+
+# --------------------------------------------------------------------------
+# Email OTP (apps.accounts) — email verification (required before first
+# login) and password reset both share one EmailOTP model/verify_otp()
+# service function, distinguished only by `purpose`.
+# --------------------------------------------------------------------------
+OTP_TTL_MINUTES = env.int("OTP_TTL_MINUTES", default=10)
+OTP_MAX_ATTEMPTS = env.int("OTP_MAX_ATTEMPTS", default=5)
 
 # --------------------------------------------------------------------------
 # Logging

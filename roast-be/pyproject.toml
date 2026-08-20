@@ -12,6 +12,8 @@ ignore = ["B008"]
 # and its embedded JSON schema example), not code — wrapping them would
 # just make the actual prompt text harder to read/edit.
 "apps/ai/prompts/templates.py" = ["E501"]
+# Same reasoning — inline-styled HTML email template, not code.
+"apps/accounts/emails.py" = ["E501"]
 
 [tool.black]
 line-length = 100

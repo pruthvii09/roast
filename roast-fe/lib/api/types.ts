@@ -25,6 +25,7 @@ export interface ApiPaginatedEnvelope<T> {
 export type ApiErrorCode =
   | "VALIDATION_ERROR"
   | "AUTHENTICATION_FAILED"
+  | "EMAIL_NOT_VERIFIED"
   | "PERMISSION_DENIED"
   | "NOT_FOUND"
   | "METHOD_NOT_ALLOWED"
@@ -60,6 +61,7 @@ export interface User {
   email: string
   display_name: string
   avatar_url: string
+  email_verified: boolean
   created_at: string
 }
 
@@ -67,6 +69,26 @@ export interface RegisterRequest {
   email: string
   password: string
   display_name?: string
+  referral_code?: string
+}
+
+export interface VerifyEmailRequest {
+  email: string
+  code: string
+}
+
+export interface ResendVerificationRequest {
+  email: string
+}
+
+export interface RequestPasswordResetRequest {
+  email: string
+}
+
+export interface ConfirmPasswordResetRequest {
+  email: string
+  code: string
+  new_password: string
 }
 
 export interface LoginRequest {
@@ -217,6 +239,17 @@ export interface RoastQuota {
   used: number
   remaining: number
   resets_at: string | null
+  /** 0 when no referral bonus is currently active. */
+  bonus_amount: number
+  bonus_expires_at: string | null
+}
+
+/** GET /api/v1/referrals/me/ — the caller's own referral code and stats. */
+export interface ReferralInfo {
+  code: string
+  referral_url: string
+  total_referred: number
+  total_qualified: number
 }
 
 // --- Sharing -------------------------------------------------------------------
@@ -286,4 +319,22 @@ export interface PublicRoast {
 
 export interface ReactionCreateRequest {
   reaction_type: ReactionType
+}
+
+/**
+ * GET /api/v1/share/wall-of-fame/ entry — opt-in only (the owning
+ * Submission's visibility must be "public"). Same PII-avoidance rules as
+ * PublicRoast: no `id`, no `owner`.
+ */
+export interface WallOfFameEntry {
+  token: string
+  language: Language
+  intensity: Intensity
+  summary: string
+  final_verdict: string
+  score: number | null
+  submission: PublicSubmission
+  view_count: number
+  total_reactions: number
+  created_at: string
 }

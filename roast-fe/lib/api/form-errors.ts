@@ -41,6 +41,8 @@ export function getApiErrorMessage(error: unknown): string {
         )
       case "VALIDATION_ERROR":
         return "Please fix the highlighted fields and try again."
+      case "EMAIL_NOT_VERIFIED":
+        return "Please verify your email before logging in."
       case "PERMISSION_DENIED":
         return "You don't have permission to do that."
       case "NOT_FOUND":

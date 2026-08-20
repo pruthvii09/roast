@@ -7,9 +7,10 @@ import {
   useLogoutMutation,
   useMeQuery,
   useRegisterMutation,
+  useVerifyEmailMutation,
 } from "@/lib/api/auth/queries"
 import { refreshAccessToken } from "@/lib/api/auth/refresh"
-import type { LoginRequest, RegisterRequest, User } from "@/lib/api/types"
+import type { LoginRequest, RegisterRequest, User, VerifyEmailRequest } from "@/lib/api/types"
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated"
 
@@ -17,8 +18,10 @@ interface AuthContextValue {
   status: AuthStatus
   user: User | null
   login: (credentials: LoginRequest) => Promise<void>
-  /** Creates the account only — no tokens are issued, so status stays unchanged. Call login() after. */
+  /** Creates the account only — no tokens are issued, so status stays unchanged. Verify the email to log in. */
   register: (payload: RegisterRequest) => Promise<User>
+  /** Establishes a session on success, same as login() — the account was just verified, no separate login step needed. */
+  verifyEmail: (payload: VerifyEmailRequest) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -28,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading")
   const loginMutation = useLoginMutation()
   const registerMutation = useRegisterMutation()
+  const verifyEmailMutation = useVerifyEmailMutation()
   const logoutMutation = useLogoutMutation()
 
   // Rehydrate the in-memory access token from the httpOnly refresh cookie on
@@ -57,6 +61,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [registerMutation]
   )
 
+  const verifyEmail = useCallback(
+    async (payload: VerifyEmailRequest) => {
+      await verifyEmailMutation.mutateAsync(payload)
+      setStatus("authenticated")
+    },
+    [verifyEmailMutation]
+  )
+
   const logout = useCallback(async () => {
     // Always drop to unauthenticated, even if the network call fails — the
     // access token is already cleared locally by lib/api/auth/logout.ts's
@@ -70,8 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [logoutMutation])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user: meQuery.data ?? null, login, register, logout }),
-    [status, meQuery.data, login, register, logout]
+    () => ({ status, user: meQuery.data ?? null, login, register, verifyEmail, logout }),
+    [status, meQuery.data, login, register, verifyEmail, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
