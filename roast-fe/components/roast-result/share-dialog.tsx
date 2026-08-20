@@ -13,9 +13,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { getApiErrorMessage } from "@/lib/api/form-errors"
 import { useCreateShareLinkMutation, useRevokeShareLinkMutation } from "@/lib/api/shares/queries"
-import type { ReactionType } from "@/lib/api/types"
+import { useUpdateSubmissionMutation } from "@/lib/api/submissions/queries"
+import type { ReactionType, Submission } from "@/lib/api/types"
 
 const REACTION_EMOJI: Record<ReactionType, string> = {
   fire: "🔥",
@@ -26,11 +28,12 @@ const REACTION_EMOJI: Record<ReactionType, string> = {
 
 interface ShareDialogProps {
   roastId: string
+  submission: Submission
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-function ShareDialog({ roastId, open, onOpenChange }: ShareDialogProps) {
+function ShareDialog({ roastId, submission, open, onOpenChange }: ShareDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -43,7 +46,7 @@ function ShareDialog({ roastId, open, onOpenChange }: ShareDialogProps) {
         </DialogHeader>
         {/* Mounted only while open, so it starts from fresh state every time
             the dialog is reopened instead of needing an effect to reset it. */}
-        {open ? <ShareDialogBody roastId={roastId} /> : null}
+        {open ? <ShareDialogBody roastId={roastId} submission={submission} /> : null}
       </DialogContent>
     </Dialog>
   )
@@ -57,10 +60,21 @@ function ShareDialog({ roastId, open, onOpenChange }: ShareDialogProps) {
  * query, since the create response already includes everything this
  * needs (share_url/view_count/reactions/is_active).
  */
-function ShareDialogBody({ roastId }: { roastId: string }) {
+function ShareDialogBody({ roastId, submission }: { roastId: string; submission: Submission }) {
   const createLink = useCreateShareLinkMutation(roastId)
   const revokeLink = useRevokeShareLinkMutation(roastId)
+  const updateSubmission = useUpdateSubmissionMutation(submission.id)
   const [revoked, setRevoked] = useState(false)
+  const isFeatured = submission.visibility === "public"
+
+  async function handleFeatureToggle(checked: boolean) {
+    try {
+      await updateSubmission.mutateAsync({ visibility: checked ? "public" : "link" })
+      toast.success(checked ? "Featured on the Wall of Fame" : "Removed from the Wall of Fame")
+    } catch (error) {
+      toast.error("Couldn't update visibility", { description: getApiErrorMessage(error) })
+    }
+  }
 
   useEffect(() => {
     createLink.mutate()
@@ -165,6 +179,22 @@ function ShareDialogBody({ roastId }: { roastId: string }) {
         <Button type="button" variant="ghost" onClick={handleRevoke} disabled={revokeLink.isPending}>
           Revoke link
         </Button>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-3 py-3">
+        <Switch
+          id="feature-on-wall-of-fame"
+          checked={isFeatured}
+          onCheckedChange={handleFeatureToggle}
+          disabled={updateSubmission.isPending}
+          className="mt-0.5"
+        />
+        <label htmlFor="feature-on-wall-of-fame" className="min-w-0 flex-1 cursor-pointer">
+          <span className="block text-sm font-medium text-foreground">Feature on Wall of Fame</span>
+          <span className="block text-xs text-muted-foreground">
+            Anyone can browse it on the public gallery, not just people with this link.
+          </span>
+        </label>
       </div>
     </div>
   )

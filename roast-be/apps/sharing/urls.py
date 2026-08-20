@@ -5,6 +5,7 @@ from .views import (
     PublicSharedRoastView,
     ShareLinkDetailView,
     ShareLinkListCreateView,
+    WallOfFameListView,
 )
 
 urlpatterns = [
@@ -20,4 +21,5 @@ urlpatterns = [
         PublicReactionCreateView.as_view(),
         name="share-public-reaction",
     ),
+    path("wall-of-fame/", WallOfFameListView.as_view(), name="wall-of-fame-list"),
 ]

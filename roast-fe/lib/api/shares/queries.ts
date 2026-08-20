@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createOrGetShareLink } from "@/lib/api/shares/create"
 import { fetchPublicRoast } from "@/lib/api/shares/get-public"
 import { fetchShareLinksForRoast } from "@/lib/api/shares/list"
+import { fetchWallOfFame, type ListWallOfFameParams } from "@/lib/api/shares/list-wall-of-fame"
 import { reactToShare } from "@/lib/api/shares/react"
 import { revokeShareLink } from "@/lib/api/shares/revoke"
 import type { PublicRoast, ReactionCreateRequest } from "@/lib/api/types"
@@ -42,6 +43,13 @@ export function usePublicRoastQuery(token: string) {
     queryKey: queryKeys.shares.public(token),
     queryFn: () => fetchPublicRoast(token),
     retry: false,
+  })
+}
+
+export function useWallOfFameQuery(params: ListWallOfFameParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.shares.wallOfFame(params),
+    queryFn: () => fetchWallOfFame(params),
   })
 }
 

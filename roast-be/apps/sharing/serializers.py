@@ -136,3 +136,37 @@ class PublicRoastRunSerializer(serializers.ModelSerializer):
 
 class ReactionCreateSerializer(serializers.Serializer):
     reaction_type = serializers.ChoiceField(choices=ReactionType.choices)
+
+
+class WallOfFameEntrySerializer(serializers.ModelSerializer):
+    """
+    GET /api/v1/share/wall-of-fame/ entry. Same PII-avoidance rules as
+    PublicRoastRunSerializer (no `id`, no `owner`) — fields are pulled
+    off the related RoastRun/Submission via `source=`, since the queried
+    model here is ShareLink (it's what carries `token` and the
+    `total_reactions` annotation used for ranking).
+    """
+
+    submission = PublicSubmissionSerializer(source="roast.submission", read_only=True)
+    language = serializers.CharField(source="roast.language", read_only=True)
+    intensity = serializers.CharField(source="roast.intensity", read_only=True)
+    summary = serializers.CharField(source="roast.summary", read_only=True)
+    final_verdict = serializers.CharField(source="roast.final_verdict", read_only=True)
+    score = serializers.IntegerField(source="roast.score", read_only=True)
+    total_reactions = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = ShareLink
+        fields = [
+            "token",
+            "language",
+            "intensity",
+            "summary",
+            "final_verdict",
+            "score",
+            "submission",
+            "view_count",
+            "total_reactions",
+            "created_at",
+        ]
+        read_only_fields = fields

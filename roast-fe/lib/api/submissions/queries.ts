@@ -4,10 +4,11 @@ import { createSubmission } from "@/lib/api/submissions/create"
 import { fetchSubmission } from "@/lib/api/submissions/get"
 import { fetchSubmissions, type ListSubmissionsParams } from "@/lib/api/submissions/list"
 import { fetchSubmissionStatus } from "@/lib/api/submissions/status"
+import { updateSubmission } from "@/lib/api/submissions/update"
 import { uploadResumeSubmission, type UploadResumeParams } from "@/lib/api/submissions/upload-resume"
 import { pollingRefetchInterval } from "@/lib/api/utils/polling"
 import { queryKeys } from "@/lib/api/utils/query-keys"
-import type { SubmissionCreateRequest, SubmissionStatus } from "@/lib/api/types"
+import type { SubmissionCreateRequest, SubmissionStatus, SubmissionUpdateRequest } from "@/lib/api/types"
 
 const NON_TERMINAL_SUBMISSION_STATUSES: SubmissionStatus[] = ["draft", "processing"]
 const TERMINAL_SUBMISSION_STATUSES: SubmissionStatus[] = ["ready", "failed", "deleted"]
@@ -58,5 +59,17 @@ export function useSubmissionQuery(submissionId: string, enabled: boolean) {
     queryKey: queryKeys.submissions.detail(submissionId),
     queryFn: () => fetchSubmission(submissionId),
     enabled,
+  })
+}
+
+/** Used by the share dialog's "Feature on Wall of Fame" toggle (sets `visibility`). */
+export function useUpdateSubmissionMutation(submissionId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: SubmissionUpdateRequest) => updateSubmission(submissionId, payload),
+    onSuccess: (submission) => {
+      queryClient.setQueryData(queryKeys.submissions.detail(submissionId), submission)
+      queryClient.invalidateQueries({ queryKey: queryKeys.submissions.all })
+    },
   })
 }

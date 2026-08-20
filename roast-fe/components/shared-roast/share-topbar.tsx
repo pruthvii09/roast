@@ -19,6 +19,15 @@ function ShareTopbar() {
         </Link>
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Button
+            render={<Link href="/wall-of-fame" />}
+            nativeButton={false}
+            variant="ghost"
+            size="sm"
+            className="rounded-full"
+          >
+            Wall of Fame
+          </Button>
+          <Button
             render={<Link href="/login" />}
             nativeButton={false}
             variant="ghost"

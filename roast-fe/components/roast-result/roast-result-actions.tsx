@@ -45,7 +45,12 @@ function RoastResultActions({ roastRun, submission }: RoastResultActionsProps) {
           <Share2 />
           Share roast
         </Button>
-        <ShareDialog roastId={roastRun.id} open={shareOpen} onOpenChange={setShareOpen} />
+        <ShareDialog
+          roastId={roastRun.id}
+          submission={submission}
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+        />
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-2.5">

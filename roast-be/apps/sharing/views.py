@@ -9,12 +9,18 @@ from apps.common.pagination import StandardResultsSetPagination
 
 from .models import ShareLink
 from .permissions import IsShareLinkOwner
-from .selectors import get_owned_roast_run_or_404, get_owned_share_links, get_share_links_for_roast
+from .selectors import (
+    get_owned_roast_run_or_404,
+    get_owned_share_links,
+    get_share_links_for_roast,
+    get_wall_of_fame_roasts,
+)
 from .serializers import (
     PublicRoastRunSerializer,
     ReactionCreateSerializer,
     ShareLinkListSerializer,
     ShareLinkSerializer,
+    WallOfFameEntrySerializer,
 )
 from .services import (
     create_or_get_share_link,
@@ -135,3 +141,21 @@ class PublicReactionCreateView(EnvelopeMixin, APIView):
             token=token, reaction_type=serializer.validated_data["reaction_type"]
         )
         return Response(totals)
+
+
+@extend_schema(tags=["sharing-public"], responses=WallOfFameEntrySerializer)
+class WallOfFameListView(EnvelopeMixin, generics.ListAPIView):
+    """
+    GET /api/v1/share/wall-of-fame/ — anonymous, paginated feed of
+    opt-in public roasts (Submission.visibility=PUBLIC), ranked by total
+    reaction count by default. `?ordering=new` sorts by recency instead.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    serializer_class = WallOfFameEntrySerializer
+    pagination_class = StandardResultsSetPagination
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "wall-of-fame-list"
+
+    def get_queryset(self):
+        return get_wall_of_fame_roasts(ordering=self.request.query_params.get("ordering", "top"))

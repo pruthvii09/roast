@@ -5,6 +5,7 @@ import { OpeningRoast } from "@/components/roast-result/opening-roast"
 import { RoastResultSkeleton } from "@/components/roast-result/roast-result-skeleton"
 import { RoastSections } from "@/components/roast-result/roast-sections"
 import { ReactionBar } from "@/components/shared-roast/reaction-bar"
+import { ShareImageButton } from "@/components/shared-roast/share-image-button"
 import { SharedRoastHeader } from "@/components/shared-roast/shared-roast-header"
 import { ErrorState } from "@/components/shared/error-state"
 import { FadeIn } from "@/components/shared/fade-in"
@@ -62,7 +63,10 @@ function SharedRoastView({ token }: { token: string }) {
       <FindingsList findings={roast.findings} baseDelay={FINDINGS_BASE_DELAY_MS} />
       <RoastSections sections={roast.sections} delay={SECTIONS_REVEAL_DELAY_MS} />
       <FadeIn delay={ACTIONS_REVEAL_DELAY_MS}>
-        <ReactionBar token={token} reactions={roast.reactions} />
+        <div className="flex flex-col items-center gap-4">
+          <ReactionBar token={token} reactions={roast.reactions} />
+          <ShareImageButton token={token} />
+        </div>
       </FadeIn>
     </div>
   )
