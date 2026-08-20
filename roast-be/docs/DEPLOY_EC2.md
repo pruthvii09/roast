@@ -134,9 +134,11 @@ In the `pruthvii09/roast` GitHub repo -> Settings -> Secrets and variables -> Ac
 - `EC2_SSH_KEY` — the full contents of the `.pem` file from step 1 (including the
   `-----BEGIN/END-----` lines)
 
-`.github/workflows/deploy.yml` is already in the repo — the next push to `main` will SSH in and
-run `scripts/deploy.sh` automatically. You can also trigger it manually from the Actions tab
-(`workflow_dispatch`) without needing an empty commit.
+`.github/workflows/deploy.yml` is already in the repo — the next push to `main` that touches
+`roast-be/` will SSH in and run `scripts/deploy.sh` automatically (the workflow's `paths:` filter
+skips this for a frontend-only push, since Vercel already redeploys that separately via its own
+git integration). You can also trigger it manually from the Actions tab (`workflow_dispatch`)
+regardless of what changed, without needing an empty commit.
 
 ## Cost notes (staying inside free tier)
 

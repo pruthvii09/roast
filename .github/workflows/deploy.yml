@@ -17,7 +17,15 @@ name: Deploy to EC2
 on:
   push:
     branches: [main]
-  workflow_dispatch: {} # lets you trigger a redeploy manually from the Actions tab without an empty commit
+    # Only redeploy the backend when something it actually depends on
+    # changed — a frontend-only push (Vercel deploys that separately via
+    # its own git integration) shouldn't rebuild/restart the EC2 stack.
+    # Editing this workflow file itself still counts, so a pipeline
+    # change gets exercised on the push that makes it.
+    paths:
+      - "roast-be/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch: {} # lets you trigger a redeploy manually from the Actions tab without an empty commit, regardless of the path filter above
 
 jobs:
   deploy:

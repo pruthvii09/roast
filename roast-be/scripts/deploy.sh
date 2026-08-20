@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Runs on the EC2 instance itself — either manually over SSH, or invoked by
-# .github/workflows/deploy.yml on every push to main. Pulls the latest
-# code, rebuilds, and restarts the stack with zero manual steps beyond
-# this one command.
+# .github/workflows/deploy.yml on every push to main that touches
+# roast-be/ (a frontend-only push doesn't trigger this — see that
+# workflow's `paths:` filter). Pulls the latest code, rebuilds, and
+# restarts the stack with zero manual steps beyond this one command.
 #
 # No --env-file flag below on purpose: `docker compose` already defaults
 # to a file literally named ".env" in the project directory for both
