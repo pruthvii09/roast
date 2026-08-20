@@ -9,6 +9,7 @@ from django.utils import timezone
 from rest_framework.exceptions import Throttled
 
 from apps.accounts.models import User
+from apps.referrals.selectors import get_active_referral_bonus
 from apps.submissions.models import Submission, SubmissionStatus
 
 from .exceptions import SubmissionNotRoastableError
@@ -41,10 +42,25 @@ class RoastQuotaStatus:
     used: int
     remaining: int
     resets_at: datetime | None  # None means nothing is currently in-window
+    bonus_amount: int
+    bonus_expires_at: datetime | None
 
 
 def _quota_window_start() -> datetime:
     return timezone.now() - timedelta(days=settings.ROAST_QUOTA_WINDOW_DAYS)
+
+
+def _effective_weekly_limit(*, owner: User) -> tuple[int, int, datetime | None]:
+    """
+    Returns (limit, bonus_amount, bonus_expires_at). Used by BOTH
+    get_roast_quota_status (display) and _enforce_weekly_quota
+    (enforcement) — they must never compute this independently, or the
+    quota a client sees could diverge from what's actually allowed.
+    """
+    bonus = get_active_referral_bonus(user=owner)
+    bonus_amount = bonus.amount if bonus else 0
+    bonus_expires_at = bonus.expires_at if bonus else None
+    return settings.ROAST_WEEKLY_QUOTA + bonus_amount, bonus_amount, bonus_expires_at
 
 
 def get_roast_quota_status(*, owner: User) -> RoastQuotaStatus:
@@ -60,9 +76,14 @@ def get_roast_quota_status(*, owner: User) -> RoastQuotaStatus:
     resets_at = (
         oldest.created_at + timedelta(days=settings.ROAST_QUOTA_WINDOW_DAYS) if oldest else None
     )
-    limit = settings.ROAST_WEEKLY_QUOTA
+    limit, bonus_amount, bonus_expires_at = _effective_weekly_limit(owner=owner)
     return RoastQuotaStatus(
-        limit=limit, used=used, remaining=max(0, limit - used), resets_at=resets_at
+        limit=limit,
+        used=used,
+        remaining=max(0, limit - used),
+        resets_at=resets_at,
+        bonus_amount=bonus_amount,
+        bonus_expires_at=bonus_expires_at,
     )
 
 
@@ -85,7 +106,8 @@ def _enforce_weekly_quota(*, locked_owner: User) -> None:
     window_start = _quota_window_start()
     in_window = RoastRun.objects.filter(owner=locked_owner, created_at__gte=window_start)
     used = in_window.count()
-    if used < settings.ROAST_WEEKLY_QUOTA:
+    limit, _, _ = _effective_weekly_limit(owner=locked_owner)
+    if used < limit:
         return
 
     oldest = in_window.order_by("created_at").first()
@@ -94,7 +116,7 @@ def _enforce_weekly_quota(*, locked_owner: User) -> None:
     raise Throttled(
         wait=wait_seconds,
         detail=(
-            f"Weekly roast limit reached ({settings.ROAST_WEEKLY_QUOTA} per "
+            f"Weekly roast limit reached ({limit} per "
             f"{settings.ROAST_QUOTA_WINDOW_DAYS} days). Try again later."
         ),
     )

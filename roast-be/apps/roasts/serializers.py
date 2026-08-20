@@ -115,3 +115,5 @@ class RoastQuotaSerializer(serializers.Serializer):
     used = serializers.IntegerField()
     remaining = serializers.IntegerField()
     resets_at = serializers.DateTimeField(allow_null=True)
+    bonus_amount = serializers.IntegerField()
+    bonus_expires_at = serializers.DateTimeField(allow_null=True)

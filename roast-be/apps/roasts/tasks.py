@@ -66,6 +66,7 @@ def process_roast_run(roast_run_id: str) -> None:
             roast_run_id=roast_run_id,
             error_message="Roast generation timed out before it could complete.",
         )
+        return
     except Exception:
         # process_roast already handles every expected failure mode
         # internally (marks the run failed with a specific message) —
@@ -75,6 +76,26 @@ def process_roast_run(roast_run_id: str) -> None:
             roast_run_id=roast_run_id,
             error_message="An unexpected error occurred while generating this roast.",
         )
+        return
+
+    _try_qualify_referral_for_completed_run(roast_run_id)
+
+
+def _try_qualify_referral_for_completed_run(roast_run_id: str) -> None:
+    """
+    Best-effort side effect after a successful process_roast — isolated
+    in its own try/except (never re-raised) so a bug in referral
+    handling can never cause a genuinely successful roast to be marked
+    failed by process_roast_run's own exception handling above.
+    """
+    from apps.referrals.services import try_qualify_referral  # avoids a load-order cycle
+
+    try:
+        roast_run = RoastRun.objects.select_related("owner").get(id=roast_run_id)
+        if roast_run.status == RoastStatus.COMPLETED:
+            try_qualify_referral(referred=roast_run.owner)
+    except Exception:
+        logger.exception("Failed to process referral qualification for roast run %s", roast_run_id)
 
 
 @shared_task(name="apps.roasts.reconcile_stuck_roast_runs")

@@ -6,4 +6,5 @@ urlpatterns = [
     path("submissions/", include("apps.submissions.urls")),
     path("roasts/", include("apps.roasts.urls")),
     path("share/", include("apps.sharing.urls")),
+    path("referrals/", include("apps.referrals.urls")),
 ]

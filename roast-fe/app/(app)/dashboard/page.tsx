@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
 import { ActivityList } from "@/components/dashboard/activity-list"
+import { InviteFriendsCard } from "@/components/dashboard/invite-friends-card"
 import { NewRoastOptions } from "@/components/dashboard/new-roast-options"
 import { RoastQuotaBadge } from "@/components/dashboard/roast-quota-badge"
 import { useAuth } from "@/providers/auth-provider"
@@ -29,6 +30,8 @@ export default function DashboardPage() {
         <h2 className="text-lg font-semibold text-foreground">What can I roast?</h2>
         <NewRoastOptions />
       </section>
+
+      <InviteFriendsCard />
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
