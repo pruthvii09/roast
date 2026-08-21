@@ -159,3 +159,13 @@
     transform: translateX(400%);
   }
 }
+
+@keyframes gadbad-wave {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
