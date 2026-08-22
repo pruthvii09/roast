@@ -139,6 +139,7 @@
 @theme inline {
   --animate-glow-drift: glow-drift 20s ease-in-out infinite;
   --animate-progress-sweep: progress-sweep 1.6s ease-in-out infinite;
+  --animate-blink: blink 1.1s step-end infinite;
 }
 
 @keyframes glow-drift {
@@ -167,5 +168,11 @@
   }
   50% {
     transform: scaleY(1);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
   }
 }
