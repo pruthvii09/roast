@@ -56,46 +56,49 @@ function StepIntensity({ value, onChange, onBack, onContinue }: StepIntensityPro
         aria-label="Roast intensity"
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
       >
-        {INTENSITY_OPTIONS.map(({ value: intensity, label, tagline, icon: Icon, level, tone, chipClass }) => (
-          <SelectableCard
-            key={intensity}
-            name="intensity"
-            value={intensity}
-            checked={value === intensity}
-            onChange={(v) => onChange(v as Intensity)}
-            activeClassName={ACTIVE_CARD_CLASSNAME[intensity]}
-            activeIndicatorClassName={ACTIVE_INDICATOR_CLASSNAME[intensity]}
-          >
-            <span
-              className={cn(
-                "flex size-9 items-center justify-center rounded-full border",
-                chipClass
-              )}
+        {INTENSITY_OPTIONS.map(
+          ({ value: intensity, label, tagline, icon: Icon, level, tone, chipClass, comingSoon }) => (
+            <SelectableCard
+              key={intensity}
+              name="intensity"
+              value={intensity}
+              checked={value === intensity}
+              onChange={(v) => onChange(v as Intensity)}
+              activeClassName={ACTIVE_CARD_CLASSNAME[intensity]}
+              activeIndicatorClassName={ACTIVE_INDICATOR_CLASSNAME[intensity]}
+              comingSoon={comingSoon}
             >
-              <Icon className={cn("size-4.5", tone)} strokeWidth={2} />
-            </span>
-            <span className="mt-3 text-base font-semibold text-foreground">{label}</span>
-            <span className="mt-1 text-sm text-muted-foreground">{tagline}</span>
-            <div className="mt-4 flex gap-1">
-              {[1, 2, 3, 4].map((i) => (
-                <span
-                  key={i}
-                  aria-hidden
-                  className={cn(
-                    "h-1.5 flex-1 rounded-full transition-colors",
-                    i <= level ? LEVEL_BAR_CLASSNAME[intensity] : "bg-muted"
-                  )}
-                />
-              ))}
-            </div>
-            {intensity === "nuclear" ? (
-              <div className="mt-3 flex items-start gap-1.5 text-xs font-medium text-destructive">
-                <TriangleAlert className="size-3.5 shrink-0 translate-y-px" aria-hidden />
-                <span>{NUCLEAR_WARNING}</span>
+              <span
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-full border",
+                  chipClass
+                )}
+              >
+                <Icon className={cn("size-4.5", tone)} strokeWidth={2} />
+              </span>
+              <span className="mt-3 text-base font-semibold text-foreground">{label}</span>
+              <span className="mt-1 text-sm text-muted-foreground">{tagline}</span>
+              <div className="mt-4 flex gap-1">
+                {[1, 2, 3, 4].map((i) => (
+                  <span
+                    key={i}
+                    aria-hidden
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full transition-colors",
+                      i <= level ? LEVEL_BAR_CLASSNAME[intensity] : "bg-muted"
+                    )}
+                  />
+                ))}
               </div>
-            ) : null}
-          </SelectableCard>
-        ))}
+              {intensity === "nuclear" ? (
+                <div className="mt-3 flex items-start gap-1.5 text-xs font-medium text-destructive">
+                  <TriangleAlert className="size-3.5 shrink-0 translate-y-px" aria-hidden />
+                  <span>{NUCLEAR_WARNING}</span>
+                </div>
+              ) : null}
+            </SelectableCard>
+          )
+        )}
       </div>
       <StepFooter onBack={onBack} onContinue={onContinue} />
     </div>

@@ -21,13 +21,14 @@ function StepLanguage({ value, onChange, onBack, onContinue }: StepLanguageProps
         <p className="text-sm text-muted-foreground">How should we deliver the news?</p>
       </div>
       <div role="radiogroup" aria-label="Roast language" className="grid gap-3 sm:grid-cols-3">
-        {LANGUAGE_OPTIONS.map(({ value: lang, label, example }) => (
+        {LANGUAGE_OPTIONS.map(({ value: lang, label, example, comingSoon }) => (
           <SelectableCard
             key={lang}
             name="language"
             value={lang}
             checked={value === lang}
             onChange={(v) => onChange(v as Language)}
+            comingSoon={comingSoon}
           >
             <span className="text-base font-semibold text-foreground">{label}</span>
             <span className="mt-2 text-sm text-muted-foreground italic">{example}</span>

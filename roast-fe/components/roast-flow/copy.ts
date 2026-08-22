@@ -36,15 +36,19 @@ export const LANGUAGE_OPTIONS: {
   value: Language
   label: string
   example: string
+  /** Shown but unselectable, badged "Coming soon" — see SelectableCard. */
+  comingSoon?: boolean
 }[] = [
   {
     value: "en",
     label: "English",
+    comingSoon: true,
     example: "“This resume is full of buzzwords, not results.”",
   },
   {
     value: "hi",
     label: "Hindi",
+    comingSoon: true,
     example: "“यह रिज़्यूमे शब्दों से भरा है, नतीजों से नहीं।”",
   },
   {
@@ -62,6 +66,8 @@ export const INTENSITY_OPTIONS: {
   level: number
   tone: string
   chipClass: string
+  /** Shown but unselectable, badged "Coming soon" — see SelectableCard. */
+  comingSoon?: boolean
 }[] = [
   {
     value: "gentle",
@@ -71,6 +77,7 @@ export const INTENSITY_OPTIONS: {
     level: 1,
     tone: "text-muted-foreground",
     chipClass: "border-border bg-muted/60 text-muted-foreground",
+    comingSoon: true,
   },
   {
     value: "sarcastic",
@@ -80,6 +87,7 @@ export const INTENSITY_OPTIONS: {
     level: 2,
     tone: "text-foreground",
     chipClass: "border-primary/30 bg-primary/10 text-primary",
+    comingSoon: true,
   },
   {
     value: "brutal",
@@ -89,6 +97,7 @@ export const INTENSITY_OPTIONS: {
     level: 3,
     tone: "text-warning",
     chipClass: "border-warning/30 bg-warning/10 text-warning",
+    comingSoon: true,
   },
   {
     value: "nuclear",
