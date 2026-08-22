@@ -20,7 +20,7 @@ import { Logo } from "@/components/shared/logo"
 function ShareTopbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-3xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="shrink-0">
           <Logo />
         </Link>
